@@ -1,3 +1,9 @@
+import com.mongodb.DuplicateKeyException;
+import com.mongodb.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -6,10 +12,20 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Date;
 
 public class SimpleServer {
 
   public static void main(String[] args) throws IOException {
+
+    // open connection
+    MongoClient mongoClient = new MongoClient("localhost", 27017);
+    // get ref to database
+    MongoDatabase db = mongoClient.getDatabase("MyDatabase");
+    // get ref to collection
+    MongoCollection<Document> myColection = db.getCollection("WebLogs");
+    // create a new document
+
     ServerSocket ding;
     Socket dong = null;
     try {
@@ -29,6 +45,18 @@ public class SimpleServer {
         try {
           // read the first line to get the request method, URI and HTTP version
           String line = in.readLine();
+          String[] parts;
+          if (line != null) {
+            parts = line.split(" ");
+            if (parts.length > 0) {
+              Document log = new Document()
+                      .append("method", parts[0])
+                      .append("path", parts[1])
+                      .append("timeStamp", new Date().getTime());
+              myColection.insertOne(log);
+            }
+          }
+
           System.out.println("----------REQUEST START---------");
           System.out.println(line);
           // read only headers
